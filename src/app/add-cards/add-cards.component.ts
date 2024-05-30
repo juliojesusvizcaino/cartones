@@ -1,21 +1,27 @@
-import { Component, effect, inject, signal } from "@angular/core";
+import { AsyncPipe } from "@angular/common";
+import { Component, computed, inject, signal } from "@angular/core";
+import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { FormsModule } from "@angular/forms";
+import { MatButtonModule } from "@angular/material/button";
 import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
+import { filter, switchMap } from "rxjs";
 import { LorcanaApiService, LorcanaSet } from "../lorcana-api.service";
-import { AsyncPipe } from "@angular/common";
-import { toObservable } from "@angular/core/rxjs-interop";
-import {
-	EMPTY,
-	catchError,
-	combineLatest,
-	debounceTime,
-	filter,
-	lastValueFrom,
-	shareReplay,
-	switchMap,
-} from "rxjs";
+import { MatBadgeModule } from "@angular/material/badge";
+import { ParsedCard, RepositoryService } from "../repository.service";
+
+const regex = /^(?<cardNum>\d+)(?<foilAfter>f)?$/i;
+
+function parseRaw(raw: string): ParsedCard | null {
+	const result = regex.exec(raw);
+	if (!result?.groups) return null;
+	return {
+		num: Number.parseInt(result.groups["cardNum"]),
+		foil: result.groups["foilAfter"] !== undefined,
+	};
+}
 
 @Component({
 	selector: "app-add-cards",
@@ -26,52 +32,59 @@ import {
 		MatInputModule,
 		MatSelectModule,
 		AsyncPipe,
+		MatIconModule,
+		MatButtonModule,
+		MatBadgeModule,
 	],
 	templateUrl: "./add-cards.component.html",
 	styleUrl: "./add-cards.component.scss",
 })
 export class AddCardsComponent {
 	api = inject(LorcanaApiService);
+	repo = inject(RepositoryService);
 
 	selectedSet = signal<LorcanaSet | null>(null);
-	cardsToAdd = signal<string>("");
-
-	theCards$ = combineLatest([
-		toObservable(this.selectedSet),
-		toObservable(this.cardsToAdd),
-	]).pipe(
-		filter((params) => params[0] !== null),
-		debounceTime(300),
-		switchMap(async ([set, cards]) => {
-			console.assert(set !== null);
-			if (set === null) {
-				throw new Error("no way this is null, as we are already filtering it");
-			}
-			const lookup = await lastValueFrom(
-				this.api.cardsInSetLookup(set.Set_Num),
-			);
-			return cards.split(" ").map((x) => lookup.get(Number.parseInt(x)));
-			//    return cards.map(card => lookup.get(card))
-			// this.api
-			// 	.someCards({
-			// 		cards: cards
-			// 			.split(" ")
-			// 			.map((x) => Number.parseInt(x))
-			// 			.filter((x) => !Number.isNaN(x)),
-			// 		setNum: set?.Set_Num,
-			// 	})
-			// 	.pipe(catchError(() => EMPTY)),
-		}),
-		shareReplay(1),
+	rawCardsToAdd = signal<string>("");
+	lookup = toSignal(
+		toObservable(this.selectedSet).pipe(
+			filter((set): set is LorcanaSet => set !== null),
+			switchMap((set) => this.api.cardsInSetLookup(set.Set_Num)),
+		),
 	);
 
-	constructor() {
-		effect(() => {
-			console.log(this.cardsToAdd());
-			console.log(this.selectedSet());
-		});
-		this.theCards$.subscribe((things) => {
-			console.log("things", things);
+	cardsToAdd = computed(() => {
+		const lookup = this.lookup();
+		return lookup
+			? this.rawCardsToAdd()
+					.split(" ")
+					.filter((x) => x.length > 0)
+					.map((x) => {
+						const parsed = parseRaw(x);
+						return {
+							raw: x,
+							parsed,
+							card: parsed ? lookup.get(parsed.num) : null,
+						};
+					})
+			: [];
+	});
+
+	onSubmit() {
+		const set = this.selectedSet();
+		if (!set) {
+			return;
+		}
+
+		const cards: ParsedCard[] = [];
+		for (const card of this.cardsToAdd()) {
+			if (card.card && card.parsed) {
+				cards.push(card.parsed);
+			}
+		}
+
+		this.repo.addCards({
+			setNum: set.Set_Num,
+			cards,
 		});
 	}
 }

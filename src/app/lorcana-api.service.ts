@@ -77,26 +77,4 @@ export class LorcanaApiService {
 				}),
 			);
 	}
-
-	someCards(params: { cards: number[]; setNum?: number }) {
-		console.log({ params });
-		if (params.cards.length === 0) {
-			return of([]);
-		}
-		const cardParam = params.cards.map((card) => `card_num=${card};`).join("|");
-		const setParam =
-			params.setNum === undefined || params.setNum === null
-				? ""
-				: `;set_num=${params.setNum}`;
-		return this.http.get<LorcanaCard[]>(
-			`https://api.lorcana-api.com/cards/fetch?search=(${cardParam})${setParam}`,
-		);
-		// return params.cards.map(card => card in cached ? of(cached[card]) : this.getCard({card, setNum: params.setNum})
-	}
-
-	private getCard(params: { card: number; setNum?: number }) {
-		return this.http.get(
-			"https://api.lorcana-api.com/cards/fetch?search=(card_num=3;|card_num=4;);set_num=2",
-		);
-	}
 }
