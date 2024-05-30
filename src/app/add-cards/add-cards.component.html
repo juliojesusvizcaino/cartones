@@ -1,0 +1,24 @@
+<form class="max-w-48">
+  <mat-form-field class="w-full">
+    <mat-label>Set</mat-label>
+    <mat-select [(ngModel)]="selectedSet" name="set">
+      @for (set of api.sets$ | async; track set.Set_ID) {
+        <mat-option [value]="set">{{ set.Name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field class="w-full">
+    <mat-label>Cards to add</mat-label>
+    <input matInput [(ngModel)]="cardsToAdd" name="cards-to-add" />
+  </mat-form-field>
+</form>
+
+<div class="flex flex-wrap gap-2">
+  @for (card of theCards$ | async; track card?.Unique_ID) {
+    @if (!card) {
+      <p>card not found</p>
+    } @else {
+      <img class="max-w-44" [src]="card.Image" [alt]="card.Name" />
+    }
+  }
+</div>
