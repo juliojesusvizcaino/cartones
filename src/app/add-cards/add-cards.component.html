@@ -2,16 +2,26 @@
   <form (ngSubmit)="onSubmit()" class="max-w-48">
     <mat-form-field class="w-full">
       <mat-label>Set</mat-label>
-      <mat-select [(ngModel)]="selectedSet" name="set">
+      <mat-select
+        [(ngModel)]="selectedSet"
+        name="set"
+        required
+        #setInput="ngModel"
+      >
         @for (set of api.sets$ | async; track set.Set_ID) {
           <mat-option [value]="set">{{ set.Name }}</mat-option>
         }
       </mat-select>
+      @if (setInput.hasError("required")) {
+        <mat-error>Please choose a set</mat-error>
+      }
     </mat-form-field>
-    <mat-form-field class="w-full">
-      <mat-label>Cards to add</mat-label>
-      <input matInput [(ngModel)]="rawCardsToAdd" name="cards-to-add" />
-    </mat-form-field>
+    @if (setInput.model) {
+      <mat-form-field class="w-full">
+        <mat-label>Cards to add</mat-label>
+        <input matInput [(ngModel)]="rawCardsToAdd" name="cards-to-add" />
+      </mat-form-field>
+    }
     <div class="fixed bottom-4 right-4">
       <button mat-fab extended>
         <mat-icon>save</mat-icon>
@@ -27,12 +37,9 @@
       } @else if (!card.card) {
         <p>card {{ card.parsed.num }} not found</p>
       } @else {
-        <div
-          [matBadge]="card.parsed.foil ? 'foil' : ''"
-          matBadgeSize="large"
-        >
+        <div [matBadge]="card.parsed.foil ? 'foil' : ''" matBadgeSize="large">
           <img
-            class="max-w-44"
+            class="max-w-44 z-0"
             [src]="card.card.Image"
             [alt]="card.card.Name"
           />

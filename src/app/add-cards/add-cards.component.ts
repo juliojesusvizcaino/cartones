@@ -11,6 +11,8 @@ import { filter, switchMap } from "rxjs";
 import { LorcanaApiService, LorcanaSet } from "../lorcana-api.service";
 import { MatBadgeModule } from "@angular/material/badge";
 import { ParsedCard, RepositoryService } from "../repository.service";
+import { Router } from "@angular/router";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 const regex = /^(?<cardNum>\d+)(?<foilAfter>f)?$/i;
 
@@ -42,6 +44,8 @@ function parseRaw(raw: string): ParsedCard | null {
 export class AddCardsComponent {
 	api = inject(LorcanaApiService);
 	repo = inject(RepositoryService);
+	router = inject(Router);
+	snackBar = inject(MatSnackBar);
 
 	selectedSet = signal<LorcanaSet | null>(null);
 	rawCardsToAdd = signal<string>("");
@@ -86,5 +90,9 @@ export class AddCardsComponent {
 			setNum: set.Set_Num,
 			cards,
 		});
+
+		this.snackBar.open("Cards imported");
+
+		this.router.navigateByUrl("/");
 	}
 }

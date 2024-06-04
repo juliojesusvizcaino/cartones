@@ -3,6 +3,7 @@ import { LorcanaApiService, LorcanaCard } from "../lorcana-api.service";
 import { MatIconModule } from "@angular/material/icon";
 import { MatButtonModule } from "@angular/material/button";
 import { RouterLink } from "@angular/router";
+import { RepositoryService } from "../repository.service";
 
 @Component({
 	selector: "app-collection",
@@ -13,16 +14,13 @@ import { RouterLink } from "@angular/router";
 })
 export class CollectionComponent {
 	api = inject(LorcanaApiService);
+	repo = inject(RepositoryService);
 
 	cards = signal<LorcanaCard[] | null>(null);
 
 	constructor() {
 		this.api.cards().then((cards) => {
 			this.cards.set(cards.slice(30));
-		});
-
-		effect(() => {
-			console.log(this.cards());
 		});
 	}
 }

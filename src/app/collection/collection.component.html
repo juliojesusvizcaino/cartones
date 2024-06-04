@@ -1,7 +1,13 @@
-<div class="flex flex-wrap gap-2">
-  @for (card of cards() ?? []; track card.Unique_ID) {
-    <!-- <img class="max-w-44" [src]="card.Image" [alt]="card.Name" /> -->
-    <p>{{ card.Unique_ID }}</p>
+<div class="flex flex-col gap-2">
+  <!-- @for (card of cards() ?? []; track card.Unique_ID) { -->
+  <!--   <!-- <img class="max-w-44" [src]="card.Image" [alt]="card.Name" /> -->
+  <!--   <p>{{ card.Unique_ID }}</p> -->
+  <!-- } -->
+  @for (import of repo.repo().imports; track $index) {
+  <div>
+
+  </div>
+    {{ import.setNum }} {{ $index }}
   }
 </div>
 <div class="fixed bottom-4 right-4">
